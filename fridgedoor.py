@@ -3,6 +3,7 @@ import time
 
 import cv2
 import numpy as np
+import RPi.GPIO as GPIO
 from tqdm import tqdm
 
 logging.basicConfig(level=logging.DEBUG,
@@ -12,11 +13,12 @@ _logger = logging.getLogger(__name__)
 
 
 _THRESHOLD = 3000
-_VIEW = True
+_VIEW = False
 _WARMUP_TIME_s = 5
 _LIGHT_ON_TIME_s = 4
 _CAMERA_ID = 0
 _FPS_hz = 30
+_CONTROL_PIN = 21
 
 
 def _initialize_camera():
@@ -49,8 +51,13 @@ def _process_frame(frame):
 
 
 def _main():
+    # Camera setup.
     cap = _initialize_camera()
     bgnd_subtractor = cv2.createBackgroundSubtractorMOG2()
+
+    # GPIO setup.
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(_CONTROL_PIN, GPIO.OUT)
 
     # Warm-up: to allow the background subtractor to learn the background.
     _logger.debug('Start warm-up')
@@ -81,7 +88,12 @@ def _main():
 
     _logger.debug('Warm-up complete')
 
-    # TODO: signal the user that the warm-up is complete.
+    # Signal the user that the system is ready.
+    for _ in range(3):
+        GPIO.output(_CONTROL_PIN, GPIO.HIGH)
+        time.sleep(0.5)
+        GPIO.output(_CONTROL_PIN, GPIO.LOW)
+        time.sleep(0.5)
 
     light_on_start_time = None
     while True:
@@ -111,24 +123,21 @@ def _main():
                 continue
 
             # Time to switch the light off!
-
-            # TODO: send signal to light.
+            GPIO.output(_CONTROL_PIN, GPIO.LOW)
             _logger.debug('Light off')
-
             light_on_start_time = None
             continue
 
         if np.sum(bw_fgnd_mask / 255) > _THRESHOLD:
             # Motion detected!
+            GPIO.output(_CONTROL_PIN, GPIO.HIGH)
             _logger.debug('Motion detected')
-
-            # TODO: send signal to light.
-
             light_on_start_time = time.time()
 
     if _VIEW:
         cv2.destroyAllWindows()
 
+    GPIO.cleanup()
     cap.release()
 
     _logger.debug('Goodbye!')
