@@ -1,9 +1,9 @@
 import logging
 import time
 
+import RPi.GPIO as GPIO
 import cv2
 import numpy as np
-import RPi.GPIO as GPIO
 from tqdm import tqdm
 
 logging.basicConfig(level=logging.DEBUG,
@@ -78,8 +78,8 @@ def _main():
                 cv2.imshow('Warm-up', fgnd_mask)
                 cv2.waitKey(1)
 
-            # Update the TQDM bar.
-            time_diff_ms = int(round((time.time() - prev_time_s)  * 1e3))
+            # Update the tqdm bar.
+            time_diff_ms = int(round((time.time() - prev_time_s) * 1e3))
             pbar.update(time_diff_ms)
             prev_time_s = time.time()
 
@@ -88,7 +88,7 @@ def _main():
 
     _logger.debug('Warm-up complete')
 
-    # Signal the user that the system is ready.
+    # Signal the user that the system is ready by flickering the light 3 times.
     for _ in range(3):
         GPIO.output(_CONTROL_PIN, GPIO.HIGH)
         time.sleep(0.5)
@@ -123,7 +123,7 @@ def _main():
                 # The light must be on a little longer.
                 continue
 
-            # Light on time is over.
+            # Light-on time is over.
 
             if is_light_on:
                 # Time to switch the light off.
@@ -132,13 +132,14 @@ def _main():
                 _logger.debug('Light off')
                 continue
             
-            if time.time() - light_on_start_time < (_LIGHT_ON_TIME_s + _WARMUP_TIME_s):
+            if time.time() - light_on_start_time < \
+                    (_LIGHT_ON_TIME_s + _WARMUP_TIME_s):
                 # Warm-up time after switching off the light.
                 continue
 
             # Ready to restart a new detection cycle.
             light_on_start_time = None
-            _logger.debug('Warm-up time after light off is over')
+            _logger.debug('Motion detector reset')
             continue
 
         if np.sum(bw_fgnd_mask / 255) > _THRESHOLD:
