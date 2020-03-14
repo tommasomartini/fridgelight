@@ -96,6 +96,7 @@ def _main():
         time.sleep(0.5)
 
     light_on_start_time = None
+    is_light_on = False
     while True:
         ret_val, frame = cap.read()
         if ret_val is False:
@@ -122,16 +123,29 @@ def _main():
                 # The light must be on a little longer.
                 continue
 
-            # Time to switch the light off!
-            GPIO.output(_CONTROL_PIN, GPIO.LOW)
-            _logger.debug('Light off')
+            # Light on time is over.
+
+            if is_light_on:
+                # Time to switch the light off.
+                GPIO.output(_CONTROL_PIN, GPIO.LOW)
+                is_light_on = False
+                _logger.debug('Light off')
+                continue
+            
+            if time.time() - light_on_start_time < (_LIGHT_ON_TIME_s + _WARMUP_TIME_s):
+                # Warm-up time after switching off the light.
+                continue
+
+            # Ready to restart a new detection cycle.
             light_on_start_time = None
+            _logger.debug('Warm-up time after light off is over')
             continue
 
         if np.sum(bw_fgnd_mask / 255) > _THRESHOLD:
             # Motion detected!
-            GPIO.output(_CONTROL_PIN, GPIO.HIGH)
             _logger.debug('Motion detected')
+            GPIO.output(_CONTROL_PIN, GPIO.HIGH)
+            is_light_on = True 
             light_on_start_time = time.time()
 
     if _VIEW:
