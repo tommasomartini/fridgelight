@@ -88,13 +88,6 @@ def _main():
 
     _logger.debug('Warm-up complete')
 
-    # Signal the user that the system is ready by flickering the light 3 times.
-    for _ in range(3):
-        GPIO.output(_CONTROL_PIN, GPIO.HIGH)
-        time.sleep(0.5)
-        GPIO.output(_CONTROL_PIN, GPIO.LOW)
-        time.sleep(0.5)
-
     light_on_start_time = None
     is_light_on = False
     while True:
