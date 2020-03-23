@@ -58,6 +58,7 @@ def _main():
     # GPIO setup.
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(_CONTROL_PIN, GPIO.OUT)
+    GPIO.output(_CONTROL_PIN, GPIO.LOW)
 
     # Warm-up: to allow the background subtractor to learn the background.
     _logger.debug('Start warm-up')
