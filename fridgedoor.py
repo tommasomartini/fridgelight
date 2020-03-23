@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.DEBUG,
 _logger = logging.getLogger(__name__)
 
 
-_THRESHOLD = 3000
+_THRESHOLD = 500
 _VIEW = False
 _WARMUP_TIME_s = 5
 _LIGHT_ON_TIME_s = 10
